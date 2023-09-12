@@ -1,0 +1,172 @@
+openapi: 3.0.3
+info:
+  title: Hadithopen.io API
+  version: 1.0.0
+servers:
+  - url: /api
+paths:
+  /v1/hadith:
+    get:
+      summary: Get all available hadith
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HadithCardsResponse'
+
+  /v1/hadith/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+    get:
+      summary: Get current hadith
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HadithCardsResponse'
+
+  /v1/hadith/{id}/transmitters:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+    get:
+      summary: Get current hadith transmitters
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransmittersResponse'
+
+  /v1/hadith/search:
+    parameters:
+      - in: query
+        name: q
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get found hadith
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HadithCardsResponse'
+
+  /v1/hadith/{id}/tags:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+    get:
+      summary: Get hadith tags
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HadithTagsResponse'
+
+components:
+  schemas:
+    HadithCard:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        desc:
+          type: string
+
+    HadithCardsResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/HadithCard"
+
+    HadithResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        orig:
+          type: string
+          example: |
+            إدخال بعض النوادر أو الكلمات العشوائية إلى النص. إن كنت تريد أن تستخدم نص لوريم 
+             إيبسوم ما، عليك أن تتحقق أولاً أن ليس هناك أي كلمات أو عبارات محرجة أو غير لائقة مخبأة في هذا النص. بينما تعمل
+            جميع مولّدات نصوص لوريم إيبسوم على الإنترنت على إعادة تكرار مقاطع من نص لوريم إيبسوم نفسه عدة 
+             مرات بما تتطلبه الحاجة، يقوم مولّدنا هذا باستخدام كلمات من قاموس يحوي على أكثر من
+        translate:
+          type: string
+          example: |
+            here are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration 
+            in some form, by injected humour, or randomised words which don't look even slightly believable.
+        interpretation:
+          type: string
+          example: |
+            It is a long established fact that a reader will be distracted by the readable content of a page when 
+            looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of
+            letters, as opposed to using 'Content here, content here', making it look like readable English.
+
+    Seq:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+
+    TransmittersResponse:
+      type: object
+      properties:
+        seqs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Seq"
+        lines:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: integer
+              format: int64
+          example: | 
+              1: [2, 3]
+              3: [4]
+
+    HadithTag:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+
+    HadithTagsResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/HadithTag"
