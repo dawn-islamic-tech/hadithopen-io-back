@@ -8,6 +8,7 @@ paths:
   /v1/hadith:
     get:
       summary: Get all available hadith
+      operationId: GetHadith
       responses:
         '200':
           description: OK
@@ -26,13 +27,14 @@ paths:
           format: int64
     get:
       summary: Get current hadith
+      operationId: GetHadithByID
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HadithCardsResponse'
+                $ref: '#/components/schemas/HadithResponse'
 
   /v1/hadith/{id}/transmitters:
     parameters:
@@ -44,6 +46,7 @@ paths:
           format: int64
     get:
       summary: Get current hadith transmitters
+      operationId: GetTransmitters
       responses:
         '200':
           description: OK
@@ -60,6 +63,7 @@ paths:
         schema:
           type: string
     get:
+      operationId: GetSearchedHadith
       summary: Get found hadith
       responses:
         '200':
@@ -78,6 +82,7 @@ paths:
           type: integer
           format: int64
     get:
+      operationId: GetSearchedTags
       summary: Get hadith tags
       responses:
         '200':
@@ -111,7 +116,7 @@ components:
         id:
           type: integer
           format: int64
-        orig:
+        origin:
           type: string
           example: |
             إدخال بعض النوادر أو الكلمات العشوائية إلى النص. إن كنت تريد أن تستخدم نص لوريم 

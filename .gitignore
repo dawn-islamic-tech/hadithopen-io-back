@@ -1,3 +1,4 @@
 /.idea
 
-/internal/hadith/dhttp/gen/*
+/internal/story/dhttp/gen/*
+/configs/main.yaml
