@@ -18,12 +18,10 @@ func NewHadith(db *pgx.Conn) *Hadith {
 	}
 }
 
-func (h Hadith) Few(ctx context.Context) (compacts []types.HadithCompact, err error) {
-	//TODO implement me
-	panic("implement me")
+func (h Hadith) Few(context.Context) (compacts []types.HadithCompact, err error) {
+	return nil, err
 }
 
-func (h Hadith) Get(ctx context.Context, id int64) (hadith types.Hadith, err error) {
-	//TODO implement me
-	panic("implement me")
+func (h Hadith) Get(context.Context, int64) (hadith types.Hadith, err error) {
+	return hadith, nil
 }

@@ -1,0 +1,93 @@
+# Options for analysis running.
+run:
+  concurrency: 4
+  timeout: 5m
+  issues-exit-code: 2
+  tests: false
+  skip-dirs:
+    - configs
+    - api/openapi
+
+  modules-download-mode: readonly
+  allow-parallel-runners: false
+  go: "1.21"
+linters-settings:
+  wrapcheck:
+    # An array of strings that specify substrings of signatures to ignore.
+    # If this set, it will override the default set of ignored signatures.
+    # See https://github.com/tomarrell/wrapcheck#configuration for more information.
+    ignoreSigRegexps:
+      - '^func.*hadithopen-io.*'
+    ignorePackageGlobs:
+      - github.com/hadithopen-io/*
+      - github.com/pkg/errors
+      - errors
+  gofmt:
+    # Apply the rewrite rules to the source before reformatting.
+    # https://pkg.go.dev/cmd/gofmt
+    rewrite-rules:
+      - pattern: 'interface{}'
+        replacement: 'any'
+  nakedret:
+    # No naked returns, ever.
+    max-func-lines: 1 # Default: 30
+  unused:
+    # treat code as a program (not a library) and report unused exported identifiers; default is false.
+    # XXX: if you enable this setting, unused will report a lot of false-positives in text editors:
+    # if it's called for subdir of a project it can't find funcs usages. All text editor integrations
+    # with golangci-lint call it on a directory with the changed file.
+    check-exported: true
+  funlen:
+    lines: 400
+    statements: 100
+linters:
+  enable:
+    - forbidigo
+    - misspell
+    - gofmt
+    - gofumpt
+    - exportloopref
+    - durationcheck
+    - bidichk
+    - unconvert
+    - promlinter
+    - loggercheck
+    - tenv
+    - testableexamples
+    - tparallel
+    - nilerr
+    - noctx
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - forcetypeassert
+    - sqlclosecheck
+    - funlen
+    - revive
+    - prealloc
+    - gocritic
+    - gosec
+    - mirror
+    - stylecheck
+    - nestif
+    - nakedret
+    - noctx
+    - gosimple
+    - wrapcheck
+    - unused
+    - usestdlibvars
+  disable-all: true
+  fast: true
+output:
+  format: colored-line-number:stdout
+  print-issued-lines: false
+  print-linter-name: true
+  # Ничего не пропускать, пишем всё.
+  uniq-by-line: false
+  path-prefix: ""
+  # Упрощает поиск и детерминированный результат.
+  sort-results: true

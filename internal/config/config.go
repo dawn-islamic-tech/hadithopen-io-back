@@ -3,6 +3,7 @@ package config
 import (
 	"io/fs"
 	"os"
+	"time"
 
 	"gopkg.in/yaml.v3"
 
@@ -10,8 +11,9 @@ import (
 )
 
 type Config struct {
-	API API `yaml:"api"`
-	DB  DB  `yaml:"db"`
+	API  API  `yaml:"api"`
+	DB   DB   `yaml:"db"`
+	HTTP HTTP `yaml:"http"`
 }
 
 type API struct {
@@ -20,6 +22,10 @@ type API struct {
 
 type DB struct {
 	Conn string `yaml:"conn"`
+}
+
+type HTTP struct {
+	ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout"`
 }
 
 func NewConfig(path string) (_ *Config, err error) {

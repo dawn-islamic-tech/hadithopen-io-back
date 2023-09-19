@@ -18,12 +18,10 @@ func NewGraph(db *pgx.Conn) *Graph {
 	}
 }
 
-func (g Graph) Nodes(ctx context.Context, hadithID int64) (nodes []types.Node, err error) {
-	//TODO implement me
-	panic("implement me")
+func (g Graph) Nodes(context.Context, int64) (nodes []types.Node, err error) {
+	return nil, err
 }
 
-func (g Graph) Edges(ctx context.Context, hadithID int64) (edges types.Edges, err error) {
-	//TODO implement me
-	panic("implement me")
+func (g Graph) Edges(context.Context, int64) (edges types.Edges, err error) {
+	return nil, err
 }

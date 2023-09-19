@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-faster/errors"
 	"github.com/ogen-go/ogen/middleware"
 
 	"github.com/hadithopen-io/back/internal/story/dhttp/hadithgen"
@@ -43,8 +44,12 @@ func NewStoryHandler(hadith Hadith, transmitters Transmitters) *StoryHandler {
 }
 
 func (s StoryHandler) Handler(...middleware.Middleware) (http.Handler, error) {
-	return hadithgen.NewServer(
+	handler, err := hadithgen.NewServer(
 		s,
+	)
+	return handler, errors.Wrap(
+		err,
+		"make http hadith handler",
 	)
 }
 
@@ -97,20 +102,18 @@ func (s StoryHandler) GetHadithByID(ctx context.Context, params hadithgen.GetHad
 	}, nil
 }
 
-func (s StoryHandler) GetSearchedHadith(ctx context.Context, params hadithgen.GetSearchedHadithParams) (
+func (s StoryHandler) GetSearchedHadith(context.Context, hadithgen.GetSearchedHadithParams) (
 	hadithgen.HadithCardsResponse,
 	error,
 ) {
-	//TODO implement me
-	panic("implement me")
+	return hadithgen.HadithCardsResponse{}, nil
 }
 
-func (s StoryHandler) GetSearchedTags(ctx context.Context, params hadithgen.GetSearchedTagsParams) (
+func (s StoryHandler) GetSearchedTags(context.Context, hadithgen.GetSearchedTagsParams) (
 	hadithgen.HadithTagsResponse,
 	error,
 ) {
-	//TODO implement me
-	panic("implement me")
+	return hadithgen.HadithTagsResponse{}, nil
 }
 
 func (s StoryHandler) GetTransmitters(ctx context.Context, params hadithgen.GetTransmittersParams) (
@@ -119,7 +122,7 @@ func (s StoryHandler) GetTransmitters(ctx context.Context, params hadithgen.GetT
 ) {
 	graph, err := s.transmitters.Get(ctx, params.ID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "transmitters getting")
 	}
 
 	seqs := make([]hadithgen.Seq, 0, len(graph.Nodes))
