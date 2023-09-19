@@ -3,14 +3,19 @@ package postgre
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/hadithopen-io/back/internal/story/types"
 )
 
 type Hadith struct {
+	db *pgx.Conn
 }
 
-func NewHadith() *Hadith {
-	return &Hadith{}
+func NewHadith(db *pgx.Conn) *Hadith {
+	return &Hadith{
+		db: db,
+	}
 }
 
 func (h Hadith) Few(ctx context.Context) (compacts []types.HadithCompact, err error) {

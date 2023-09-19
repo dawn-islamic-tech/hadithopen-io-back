@@ -10,11 +10,16 @@ import (
 )
 
 type Config struct {
-	API API
+	API API `yaml:"api"`
+	DB  DB  `yaml:"db"`
 }
 
 type API struct {
 	Host string `yaml:"host"`
+}
+
+type DB struct {
+	Conn string `yaml:"conn"`
 }
 
 func NewConfig(path string) (_ *Config, err error) {
