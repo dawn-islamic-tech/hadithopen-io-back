@@ -31,8 +31,11 @@ func init() {
 	)
 }
 
-const baseConfigPath = "./configs/main.yaml"
-const configPathKey = "CONFIG_PATH"
+const (
+	baseConfigPath = "./configs/main.yaml"
+
+	configPathKey = "CONFIG_PATH"
+)
 
 func run() (
 	err error,
@@ -101,7 +104,8 @@ func run() (
 	eg, ctx := errgroup.WithContext(ctx)
 
 	server := &http.Server{
-		Addr: conf.API.Host,
+		Addr:              conf.API.Host,
+		ReadHeaderTimeout: conf.HTTP.ReadHeaderTimeout,
 	}
 
 	eg.Go(func() error {
@@ -122,5 +126,8 @@ func run() (
 
 	time.Sleep(time.Second * 1)
 
-	return eg.Wait()
+	return errors.Wrap(
+		eg.Wait(),
+		"waited group",
+	)
 }
