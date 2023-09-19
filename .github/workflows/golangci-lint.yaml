@@ -1,11 +1,9 @@
 name: golangci-lint
 on:
-  push:
+  pull_request:
     branches:
       - master
       - main
-  pull_request:
-
 permissions:
   contents: read
   # Optional: allow read access to pull request. Use with `only-new-issues` option.
@@ -21,6 +19,10 @@ jobs:
         with:
           go-version: '1.21'
           cache: false
+      - name: build go deps
+        run: go get github.com/ogen-go/ogen/gen@v0.74.0 # TODO: fix after use docker
+      - name: build application
+        run: make gen
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
