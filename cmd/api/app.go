@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/hadithopen-io/back/internal/config"
@@ -58,8 +59,20 @@ func run() (
 		return errors.Wrap(err, "after init app config")
 	}
 
+	slog.Info("init pgx connection")
+	dbconn, err := pgx.Connect(
+		ctx,
+		conf.DB.Conn,
+	)
+	if err != nil {
+		return errors.Wrap(err, "after init db connection")
+	}
+	defer func() { err = errors.Join(dbconn.Close(ctx)) }()
+
 	slog.Info("init hadith store")
-	hadithStore := postgre.NewHadith()
+	hadithStore := postgre.NewHadith(
+		dbconn,
+	)
 
 	slog.Info("init story service")
 	storyService := story.NewStory(
@@ -68,7 +81,9 @@ func run() (
 	)
 
 	slog.Info("init graph store")
-	graphStore := postgre.NewGraph()
+	graphStore := postgre.NewGraph(
+		dbconn,
+	)
 
 	slog.Info("init transmitters service")
 	transmittersService := story.NewTransmitters(

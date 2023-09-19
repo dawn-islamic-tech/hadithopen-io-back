@@ -1,2 +1,5 @@
 api:
   host: "localhost:9090"
+
+db:
+  conn: "postgres://hadith:hadith@hadith-db:54302/hadith?sslmode=disable"
