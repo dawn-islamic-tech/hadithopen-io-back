@@ -3,3 +3,6 @@ api:
 
 db:
   conn: "postgres://hadith:hadith@hadith-db:54302/hadith?sslmode=disable"
+
+http:
+  readHeaderTimeout: 10s
