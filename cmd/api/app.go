@@ -20,17 +20,6 @@ import (
 	"github.com/hadithopen-io/back/pkg/errors"
 )
 
-func init() {
-	slog.SetDefault(
-		slog.New(
-			slog.NewJSONHandler(
-				os.Stdout,
-				nil,
-			),
-		),
-	)
-}
-
 const (
 	baseConfigPath = "./configs/main.yaml"
 
@@ -40,6 +29,15 @@ const (
 func run() (
 	err error,
 ) {
+	slog.SetDefault(
+		slog.New(
+			slog.NewJSONHandler(
+				os.Stdout,
+				nil,
+			),
+		),
+	)
+
 	slog.Info("init app context")
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
