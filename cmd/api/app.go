@@ -15,7 +15,7 @@ import (
 	"github.com/hadithopen-io/back/internal/config"
 	"github.com/hadithopen-io/back/internal/story"
 	"github.com/hadithopen-io/back/internal/story/dhttp"
-	"github.com/hadithopen-io/back/internal/story/postgre"
+	"github.com/hadithopen-io/back/internal/story/postgres"
 	"github.com/hadithopen-io/back/pkg/empty"
 	"github.com/hadithopen-io/back/pkg/errors"
 )
@@ -71,7 +71,7 @@ func run() (
 	defer func() { err = errors.Join(err, dbconn.Close(ctx)) }()
 
 	slog.Info("init hadith store")
-	hadithStore := postgre.NewHadith(
+	hadithStore := postgres.NewHadith(
 		dbconn,
 	)
 
@@ -82,7 +82,7 @@ func run() (
 	)
 
 	slog.Info("init graph store")
-	graphStore := postgre.NewGraph(
+	graphStore := postgres.NewGraph(
 		dbconn,
 	)
 
