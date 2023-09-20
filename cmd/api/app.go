@@ -68,7 +68,7 @@ func run() (
 	if err != nil {
 		return errors.Wrap(err, "after init db connection")
 	}
-	defer func() { err = errors.Join(dbconn.Close(ctx)) }()
+	defer func() { err = errors.Join(err, dbconn.Close(ctx)) }()
 
 	slog.Info("init hadith store")
 	hadithStore := postgre.NewHadith(
