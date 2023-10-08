@@ -5,8 +5,31 @@ services:
     image: postgres:16
     restart: always
     ports:
-      - "54302:5432"
+      - "8787:5432"
     environment:
       POSTGRES_PASSWORD: hadith
       POSTGRES_USER: hadith
       POSTGRES_DB: hadith
+  meilisearch:
+    container_name: hadith-meilisearch
+    image: getmeili/meilisearch:latest
+    environment:
+      - http_proxy
+      - https_proxy
+      - MEILI_MASTER_KEY=test_key
+      - MEILI_NO_ANALYTICS=true
+      - MEILI_ENV=development
+      - MEILI_LOG_LEVEL
+      - MEILI_DB_PATH=data.ms
+    ports:
+      - "7701:7700"
+    networks:
+      - meilisearch
+    volumes:
+      - ./data.ms:/data.ms
+    restart: unless-stopped
+
+networks:
+  meilisearch:
+    driver: bridge
+
