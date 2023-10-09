@@ -3,9 +3,9 @@ info:
   title: Hadithopen.io API
   version: 1.0.0
 servers:
-  - url: /api
+  - url: /api/hadith
 paths:
-  /v1/hadith:
+  /v1/story:
     get:
       summary: Get all available hadith
       operationId: GetHadith
@@ -16,8 +16,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HadithCardsResponse'
+    post:
+      requestBody:
+        description: Update an existent pet in the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HadithObjectRequest'
+      summary: Create hadith
+      operationId: CreateHadith
+      responses:
+        '200':
+          description: OK
 
-  /v1/hadith/{id}:
+  /v1/story/{id}:
     parameters:
       - in: path
         name: id
@@ -36,7 +49,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/HadithResponse'
 
-  /v1/hadith/{id}/transmitters:
+  /v1/story/{id}/transmitters:
     parameters:
       - in: path
         name: id
@@ -55,7 +68,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/TransmittersResponse'
 
-  /v1/hadith/search:
+  /v1/story/search:
     parameters:
       - in: query
         name: q
@@ -73,7 +86,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/HadithCardsResponse'
 
-  /v1/hadith/{id}/tags:
+  /v1/story/{id}/tags:
     parameters:
       - in: path
         name: id
@@ -94,6 +107,62 @@ paths:
 
 components:
   schemas:
+    ObjectTranslate:
+      type: object
+      properties:
+        lang:
+          type: string
+          default: ''
+        translate:
+          type: string
+          default: ''
+
+    ObjectStory:
+      type: object
+      properties:
+        title:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObjectTranslate'
+
+
+    ObjectVersion:
+      type: object
+      properties:
+        original:
+          type: string
+          default: ''
+        isDefault:
+          type: boolean
+          default: false
+        version:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObjectTranslate'
+
+    HadithObjectRequest:
+      type: object
+      properties:
+        story:
+          $ref: '#/components/schemas/ObjectStory'
+        brought:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObjectTranslate'
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObjectVersion'
+        comment:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObjectTranslate'
+      required:
+        - story
+        - brought
+        - versions
+        - comment
+
     HadithCard:
       type: object
       properties:
@@ -158,9 +227,9 @@ components:
             items:
               type: integer
               format: int64
-          example: | 
-              1: [2, 3]
-              3: [4]
+          example: |
+            1: [2, 3]
+            3: [4]
 
     HadithTag:
       type: object
