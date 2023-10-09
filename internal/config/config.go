@@ -11,9 +11,11 @@ import (
 )
 
 type Config struct {
-	API  API  `yaml:"api"`
-	DB   DB   `yaml:"db"`
-	HTTP HTTP `yaml:"http"`
+	API         API         `yaml:"api"`
+	DB          DB          `yaml:"db"`
+	HTTP        HTTP        `yaml:"http"`
+	MeiliSearch MeiliSearch `yaml:"meiliSearch"`
+	OpenAI      OpenAI      `yaml:"openAI"`
 }
 
 type API struct {
@@ -26,6 +28,21 @@ type DB struct {
 
 type HTTP struct {
 	ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout"`
+}
+
+type MeiliSearch struct {
+	APIKey string `yaml:"masterKey"`
+	Host   string `yaml:"host"`
+}
+
+type OpenAIKey string
+
+func (OpenAIKey) Env() string { return "OPENAI_API_KEY" }
+
+func (o OpenAIKey) String() string { return string(o) }
+
+type OpenAI struct {
+	Key OpenAIKey `yaml:"key"`
 }
 
 func NewConfig(path string) (_ *Config, err error) {

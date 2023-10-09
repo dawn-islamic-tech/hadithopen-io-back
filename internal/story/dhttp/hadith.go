@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-faster/errors"
 	"github.com/ogen-go/ogen/middleware"
 
 	"github.com/hadithopen-io/back/internal/story/dhttp/hadithgen"
 	"github.com/hadithopen-io/back/internal/story/types"
+	"github.com/hadithopen-io/back/pkg/errors"
 )
 
 type Hadith interface {
@@ -24,6 +24,12 @@ type Hadith interface {
 	)
 }
 
+type HadithObject interface {
+	Create(ctx context.Context, object types.HadithObject) (
+		err error,
+	)
+}
+
 type Transmitters interface {
 	Get(ctx context.Context, hadithID int64) (
 		graph types.Graph,
@@ -34,26 +40,41 @@ type Transmitters interface {
 type StoryHandler struct {
 	hadith       Hadith
 	transmitters Transmitters
+	object       HadithObject
+
+	hadithgen.UnimplementedHandler
 }
 
-func NewStoryHandler(hadith Hadith, transmitters Transmitters) *StoryHandler {
+func NewStoryHandler(hadith Hadith, transmitters Transmitters, object HadithObject) *StoryHandler {
 	return &StoryHandler{
 		hadith:       hadith,
 		transmitters: transmitters,
+		object:       object,
 	}
 }
 
-func (s StoryHandler) Handler(...middleware.Middleware) (http.Handler, error) {
+const path = "/api/hadith"
+
+func (s *StoryHandler) Path() string { return path }
+
+func (s *StoryHandler) Handler(m ...middleware.Middleware) (http.Handler, error) {
 	handler, err := hadithgen.NewServer(
 		s,
+		hadithgen.WithMiddleware(
+			m...,
+		),
+		hadithgen.WithPathPrefix(
+			path,
+		),
 	)
+
 	return handler, errors.Wrap(
 		err,
 		"make http hadith handler",
 	)
 }
 
-func (s StoryHandler) GetHadith(ctx context.Context) (hadithgen.HadithCardsResponse, error) {
+func (s *StoryHandler) GetHadith(ctx context.Context) (hadithgen.HadithCardsResponse, error) {
 	few, err := s.hadith.Few(ctx)
 	if err != nil {
 		return nil, err
@@ -77,7 +98,7 @@ func (s StoryHandler) GetHadith(ctx context.Context) (hadithgen.HadithCardsRespo
 	return res, nil
 }
 
-func (s StoryHandler) GetHadithByID(ctx context.Context, params hadithgen.GetHadithByIDParams) (
+func (s *StoryHandler) GetHadithByID(ctx context.Context, params hadithgen.GetHadithByIDParams) (
 	*hadithgen.HadithResponse,
 	error,
 ) {
@@ -102,21 +123,21 @@ func (s StoryHandler) GetHadithByID(ctx context.Context, params hadithgen.GetHad
 	}, nil
 }
 
-func (s StoryHandler) GetSearchedHadith(context.Context, hadithgen.GetSearchedHadithParams) (
+func (s *StoryHandler) GetSearchedHadith(context.Context, hadithgen.GetSearchedHadithParams) (
 	hadithgen.HadithCardsResponse,
 	error,
 ) {
 	return hadithgen.HadithCardsResponse{}, nil
 }
 
-func (s StoryHandler) GetSearchedTags(context.Context, hadithgen.GetSearchedTagsParams) (
+func (s *StoryHandler) GetSearchedTags(context.Context, hadithgen.GetSearchedTagsParams) (
 	hadithgen.HadithTagsResponse,
 	error,
 ) {
 	return hadithgen.HadithTagsResponse{}, nil
 }
 
-func (s StoryHandler) GetTransmitters(ctx context.Context, params hadithgen.GetTransmittersParams) (
+func (s *StoryHandler) GetTransmitters(ctx context.Context, params hadithgen.GetTransmittersParams) (
 	*hadithgen.TransmittersResponse,
 	error,
 ) {
@@ -148,4 +169,57 @@ func (s StoryHandler) GetTransmitters(ctx context.Context, params hadithgen.GetT
 			lines,
 		),
 	}, nil
+}
+
+func (s *StoryHandler) CreateHadith(ctx context.Context, params *hadithgen.HadithObjectRequest) error {
+	obj := types.HadithObject{
+		Story: types.Story{
+			Title: genToCommonTranslates(
+				params.Story.Title,
+			),
+		},
+		Brought: types.Brought{
+			Brought: genToCommonTranslates(
+				params.Brought,
+			),
+		},
+		Comment: types.Comment{
+			Comment: genToCommonTranslates(
+				params.Comment,
+			),
+		},
+	}
+
+	for _, v := range params.Versions {
+		obj.Versions = append(
+			obj.Versions,
+			types.Version{
+				Original:  v.Original.Value,
+				IsDefault: v.IsDefault.Value,
+				Version: genToCommonTranslates(
+					v.Version,
+				),
+			},
+		)
+	}
+
+	return s.object.Create(
+		ctx,
+		obj,
+	)
+}
+
+func genToCommonTranslates(gen []hadithgen.ObjectTranslate) (ret types.Translates) {
+	ret.Values = make([]types.Translate, 0, len(gen))
+	for _, t := range gen {
+		ret.Values = append(
+			ret.Values,
+			types.Translate{
+				Lang:      t.Lang.Value,
+				Translate: t.Translate.Value,
+			},
+		)
+	}
+
+	return ret
 }

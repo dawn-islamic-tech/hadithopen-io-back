@@ -9,15 +9,19 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"golang.org/x/sync/errgroup"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/hadithopen-io/back/internal/config"
 	"github.com/hadithopen-io/back/internal/story"
 	"github.com/hadithopen-io/back/internal/story/dhttp"
-	"github.com/hadithopen-io/back/internal/story/postgre"
+	"github.com/hadithopen-io/back/internal/story/postgres"
+	"github.com/hadithopen-io/back/pkg/cookie/middleware"
+	"github.com/hadithopen-io/back/pkg/db/conn"
 	"github.com/hadithopen-io/back/pkg/empty"
 	"github.com/hadithopen-io/back/pkg/errors"
+	"github.com/hadithopen-io/back/pkg/tx"
 )
 
 const (
@@ -31,7 +35,7 @@ func run() (
 ) {
 	slog.SetDefault(
 		slog.New(
-			slog.NewJSONHandler(
+			slog.NewTextHandler(
 				os.Stdout,
 				nil,
 			),
@@ -44,6 +48,7 @@ func run() (
 		syscall.SIGINT,
 		syscall.SIGTERM,
 		syscall.SIGKILL,
+		os.Interrupt,
 	)
 	defer cancel()
 
@@ -61,17 +66,14 @@ func run() (
 	}
 
 	slog.Info("init pgx connection")
-	dbconn, err := pgx.Connect(
-		ctx,
-		conf.DB.Conn,
-	)
+	dbconn, err := conn.NewConn(ctx, conf.DB.Conn)
 	if err != nil {
-		return errors.Wrap(err, "after init db connection")
+		return err
 	}
-	defer func() { err = errors.Join(err, dbconn.Close(ctx)) }()
+	defer func() { err = errors.JoinCloser(err, dbconn) }()
 
 	slog.Info("init hadith store")
-	hadithStore := postgre.NewHadith(
+	hadithStore := postgres.NewHadith(
 		dbconn,
 	)
 
@@ -81,8 +83,44 @@ func run() (
 		nil,
 	)
 
+	slog.Info("init translate repo")
+	translate := postgres.NewTranslate(
+		dbconn,
+	)
+
+	slog.Info("init comment repo")
+	comment := postgres.NewComment(
+		dbconn,
+	)
+
+	slog.Info("init brought repo")
+	brought := postgres.NewBrought(
+		dbconn,
+	)
+
+	slog.Info("init version repo")
+	version := postgres.NewVersion(
+		dbconn,
+	)
+
+	slog.Info("init object tx")
+	objectWrapper := tx.NewWrapper(
+		postgres.NewObjectTX(
+			dbconn,
+		),
+	)
+
+	storyObjectService := story.NewObject(
+		translate,
+		comment,
+		brought,
+		version,
+		hadithStore,
+		objectWrapper,
+	)
+
 	slog.Info("init graph store")
-	graphStore := postgre.NewGraph(
+	graphStore := postgres.NewGraph(
 		dbconn,
 	)
 
@@ -92,40 +130,63 @@ func run() (
 	)
 
 	slog.Info("init story handler")
-	handler, err := dhttp.NewStoryHandler(storyService, transmittersService).Handler()
+	storyDelivery := dhttp.NewStoryHandler(
+		storyService,
+		transmittersService,
+		storyObjectService,
+	)
+
+	storyHandler, err := storyDelivery.Handler(
+		middleware.CookieAuth,
+	)
 	if err != nil {
 		return errors.Wrap(err, "after init story handler")
 	}
-
-	http.Handle("/", handler)
-
-	eg, ctx := errgroup.WithContext(ctx)
 
 	server := &http.Server{
 		Addr:              conf.API.Host,
 		ReadHeaderTimeout: conf.HTTP.ReadHeaderTimeout,
 	}
 
-	eg.Go(func() error {
-		slog.Info("init http server")
+	http.Handle(
+		storyDelivery.Path()+"/",
+		storyHandler,
+	)
 
+	eg, ctx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		defer slog.Info("stop listen http server")
+
+		slog.Info("init http server", "host", conf.API.Host)
+		serr := server.ListenAndServe()
+		if errors.Is(serr, http.ErrServerClosed) {
+			return nil
+		}
 		return errors.Wrap(
-			server.ListenAndServe(),
-			"after init http listening",
+			serr,
+			"group listen http server",
 		)
 	})
 
-	<-ctx.Done()
-	slog.Info("shutdown app")
+	eg.Go(func() error {
+		defer slog.Info("shutdown http server")
 
-	if err := server.Shutdown(ctx); err != nil {
-		return errors.Wrap(err, "shutdown http server")
+		<-ctx.Done()
+		return errors.Wrap(
+			server.Shutdown(
+				ctx,
+			),
+			"group shutdown http server",
+		)
+	})
+
+	if err := eg.Wait(); err != nil {
+		return errors.Wrap(err, "waited group")
 	}
 
+	slog.Info("shutdown app")
 	time.Sleep(time.Second * 1)
 
-	return errors.Wrap(
-		eg.Wait(),
-		"waited group",
-	)
+	return nil
 }

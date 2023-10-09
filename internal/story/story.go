@@ -33,7 +33,10 @@ type Story struct {
 	}
 }
 
-func NewStory(store HadithStore, cache HadithCache) *Story {
+func NewStory(
+	store HadithStore,
+	cache HadithCache,
+) *Story {
 	return &Story{
 		hadith: struct {
 			store HadithStore
