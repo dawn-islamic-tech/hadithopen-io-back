@@ -6,3 +6,9 @@ db:
 
 http:
   readHeaderTimeout: 10s
+
+meiliSearch:
+    apiKey: "some_key"
+    host: "localhost:7070"
+
+openAI:
