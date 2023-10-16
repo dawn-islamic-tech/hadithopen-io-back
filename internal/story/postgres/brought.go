@@ -31,3 +31,20 @@ returning id
 		brought,
 	)
 }
+
+func (b Brought) Update(ctx context.Context, brought types.Brought) (
+	err error,
+) {
+	const query = `
+update hadith.brought
+	set brought = :brought
+where id = :id
+`
+
+	return pgscan.Exec(
+		ctx,
+		b.db,
+		query,
+		brought,
+	)
+}

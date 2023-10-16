@@ -28,6 +28,10 @@ type HadithObject interface {
 	Create(ctx context.Context, object types.HadithObject) (
 		err error,
 	)
+
+	Update(ctx context.Context, object types.HadithObject) (
+		err error,
+	)
 }
 
 type Transmitters interface {
@@ -108,17 +112,77 @@ func (s *StoryHandler) GetHadithByID(ctx context.Context, params hadithgen.GetHa
 	}
 
 	return &hadithgen.HadithResponse{
-		ID: hadithgen.NewOptInt64(
-			hadith.ID,
+		Story: hadithgen.NewOptGetHadithStory(
+			hadithgen.GetHadithStory{
+				ID: hadithgen.NewOptInt64(
+					hadith.StoryID,
+				),
+				Title: hadithgen.NewOptObjectTranslate(
+					hadithgen.ObjectTranslate{
+						ID: hadithgen.NewOptInt64(
+							hadith.StoryTranslateID,
+						),
+						Lang: hadithgen.NewOptString(
+							hadith.StoryLang,
+						),
+						Translate: hadithgen.NewOptString(
+							hadith.Story,
+						),
+					},
+				),
+			},
 		),
-		Origin: hadithgen.NewOptString(
-			hadith.Origin,
+		Version: hadithgen.NewOptGetHadithVersion(
+			hadithgen.GetHadithVersion{
+				ID: hadithgen.NewOptInt64(
+					hadith.VersionID,
+				),
+				Original: hadithgen.NewOptString(
+					hadith.Original,
+				),
+				IsDefault: hadithgen.NewOptBool(
+					hadith.IsDefault,
+				),
+				BroughtId: hadithgen.NewOptInt64(
+					hadith.VersionBroughtID,
+				),
+				Version: hadithgen.NewOptObjectTranslate(
+					hadithgen.ObjectTranslate{
+						ID: hadithgen.NewOptInt64(
+							hadith.VersionTranslateID,
+						),
+						Lang: hadithgen.NewOptString(
+							hadith.VersionLang,
+						),
+						Translate: hadithgen.NewOptString(
+							hadith.Version,
+						),
+					},
+				),
+			},
 		),
-		Translate: hadithgen.NewOptString(
-			hadith.Translate,
-		),
-		Interpretation: hadithgen.NewOptString(
-			hadith.Interpretation,
+		Comment: hadithgen.NewOptGetHadithComment(
+			hadithgen.GetHadithComment{
+				ID: hadithgen.NewOptInt64(
+					hadith.CommentID,
+				),
+				BroughtId: hadithgen.NewOptInt64(
+					hadith.CommentBroughtID,
+				),
+				Comment: hadithgen.NewOptObjectTranslate(
+					hadithgen.ObjectTranslate{
+						ID: hadithgen.NewOptInt64(
+							hadith.CommentTranslateID,
+						),
+						Lang: hadithgen.NewOptString(
+							hadith.CommentLang,
+						),
+						Translate: hadithgen.NewOptString(
+							hadith.Comment,
+						),
+					},
+				),
+			},
 		),
 	}, nil
 }
@@ -137,11 +201,11 @@ func (s *StoryHandler) GetSearchedTags(context.Context, hadithgen.GetSearchedTag
 	return hadithgen.HadithTagsResponse{}, nil
 }
 
-func (s *StoryHandler) GetTransmitters(ctx context.Context, params hadithgen.GetTransmittersParams) (
+func (s *StoryHandler) GetTransmitters(ctx context.Context, req hadithgen.GetTransmittersParams) (
 	*hadithgen.TransmittersResponse,
 	error,
 ) {
-	graph, err := s.transmitters.Get(ctx, params.ID)
+	graph, err := s.transmitters.Get(ctx, req.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "transmitters getting")
 	}
@@ -171,36 +235,22 @@ func (s *StoryHandler) GetTransmitters(ctx context.Context, params hadithgen.Get
 	}, nil
 }
 
-func (s *StoryHandler) CreateHadith(ctx context.Context, params *hadithgen.HadithObjectRequest) error {
+func (s *StoryHandler) CreateHadith(ctx context.Context, req *hadithgen.HadithObjectRequest) error {
 	obj := types.HadithObject{
 		Story: types.Story{
-			Title: genToCommonTranslates(
-				params.Story.Title,
-			),
-		},
-		Brought: types.Brought{
-			Brought: genToCommonTranslates(
-				params.Brought,
-			),
+			Title: genTranslates(
+				req.Title,
+			).Common(),
 		},
 		Comment: types.Comment{
-			Comment: genToCommonTranslates(
-				params.Comment,
-			),
+			BroughtID: req.Comment.BroughtId.Value,
+			Comment: genTranslates(
+				req.Comment.Translates,
+			).Common(),
 		},
-	}
-
-	for _, v := range params.Versions {
-		obj.Versions = append(
-			obj.Versions,
-			types.Version{
-				Original:  v.Original.Value,
-				IsDefault: v.IsDefault.Value,
-				Version: genToCommonTranslates(
-					v.Version,
-				),
-			},
-		)
+		Versions: genVersions(
+			req.Versions,
+		).Common(),
 	}
 
 	return s.object.Create(
@@ -209,12 +259,45 @@ func (s *StoryHandler) CreateHadith(ctx context.Context, params *hadithgen.Hadit
 	)
 }
 
-func genToCommonTranslates(gen []hadithgen.ObjectTranslate) (ret types.Translates) {
-	ret.Values = make([]types.Translate, 0, len(gen))
-	for _, t := range gen {
+func (s *StoryHandler) UpdateHadithByID(
+	ctx context.Context,
+	req *hadithgen.HadithObjectRequest,
+	params hadithgen.UpdateHadithByIDParams,
+) error {
+	obj := types.HadithObject{
+		Story: types.Story{
+			ID: params.ID,
+			Title: genTranslates(
+				req.Title,
+			).Common(),
+		},
+		Comment: types.Comment{
+			ID:        req.Comment.ID.Value,
+			BroughtID: req.Comment.BroughtId.Value,
+			Comment: genTranslates(
+				req.Comment.Translates,
+			).Common(),
+		},
+		Versions: genVersions(
+			req.Versions,
+		).Common(),
+	}
+
+	return s.object.Update(
+		ctx,
+		obj,
+	)
+}
+
+type genTranslates []hadithgen.ObjectTranslate
+
+func (g genTranslates) Common() (ret types.Translates) {
+	ret.Values = make([]types.Translate, 0, len(g))
+	for _, t := range g {
 		ret.Values = append(
 			ret.Values,
 			types.Translate{
+				ID:        t.ID.Value,
 				Lang:      t.Lang.Value,
 				Translate: t.Translate.Value,
 			},
@@ -222,4 +305,26 @@ func genToCommonTranslates(gen []hadithgen.ObjectTranslate) (ret types.Translate
 	}
 
 	return ret
+}
+
+type genVersions []hadithgen.HadithVersion
+
+func (g genVersions) Common() []types.Version {
+	res := make([]types.Version, 0, len(g))
+	for _, v := range g {
+		res = append(
+			res,
+			types.Version{
+				ID:        v.ID.Value,
+				Original:  v.Original,
+				BroughtID: v.BroughtId.Value,
+				IsDefault: v.IsDefault,
+				Version: genTranslates(
+					v.Version,
+				).Common(),
+			},
+		)
+	}
+
+	return res
 }
