@@ -59,6 +59,12 @@ paths:
       responses:
         '200':
           description: OK
+    delete:
+      summary: Mark delete hadith
+      operationId: MarkDeleteHadithByID
+      responses:
+        '200':
+          description: OK
 
   /v1/story/{id}/transmitters:
     parameters:

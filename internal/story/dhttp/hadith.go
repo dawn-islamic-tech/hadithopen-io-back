@@ -32,6 +32,10 @@ type HadithObject interface {
 	Update(ctx context.Context, object types.HadithObject) (
 		err error,
 	)
+
+	MarkDelete(ctx context.Context, id int64) (
+		err error,
+	)
 }
 
 type Transmitters interface {
@@ -286,6 +290,16 @@ func (s *StoryHandler) UpdateHadithByID(
 	return s.object.Update(
 		ctx,
 		obj,
+	)
+}
+
+func (s *StoryHandler) MarkDeleteHadithByID(
+	ctx context.Context,
+	params hadithgen.MarkDeleteHadithByIDParams,
+) error {
+	return s.object.MarkDelete(
+		ctx,
+		params.ID,
 	)
 }
 

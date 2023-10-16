@@ -101,6 +101,7 @@ from hadith.stories s
          left join hadith.translates bt
                    on bt.id = cast((b.brought ->> :lang) as bigint)
 where s.id = :story_id
+	and not s.mark_delete
 `
 
 	u, err := usercontext.Get(ctx)

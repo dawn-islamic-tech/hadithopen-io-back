@@ -69,6 +69,10 @@ type ObjectStore interface {
 		story types.Story,
 		err error,
 	)
+
+	MarkDelete(ctx context.Context, id int64) (
+		err error,
+	)
 }
 
 type ObjectStoreCreater interface {
@@ -443,4 +447,11 @@ func (Object) combineTranslate(old, new types.Translates) types.Translates {
 			new.Values...,
 		),
 	}
+}
+
+func (o Object) MarkDelete(ctx context.Context, id int64) error {
+	return o.store.MarkDelete(
+		ctx,
+		id,
+	)
 }

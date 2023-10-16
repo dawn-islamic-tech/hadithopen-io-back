@@ -100,3 +100,20 @@ where id = :id
 		story,
 	)
 }
+
+func (s StoryObject) MarkDelete(ctx context.Context, id int64) error {
+	const query = `
+update hadith.stories
+	set mark_delete = true
+where id = :id
+`
+
+	return pgscan.Exec(
+		ctx,
+		s.db,
+		query,
+		map[string]any{
+			"id": id,
+		},
+	)
+}
