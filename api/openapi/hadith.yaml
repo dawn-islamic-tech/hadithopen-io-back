@@ -18,7 +18,6 @@ paths:
                 $ref: '#/components/schemas/HadithCardsResponse'
     post:
       requestBody:
-        description: Update an existent pet in the store
         required: true
         content:
           application/json:
@@ -48,6 +47,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HadithResponse'
+    put:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HadithObjectRequest'
+      summary: Update hadith
+      operationId: UpdateHadithByID
+      responses:
+        '200':
+          description: OK
 
   /v1/story/{id}/transmitters:
     parameters:
@@ -105,11 +116,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/HadithTagsResponse'
 
+
 components:
   schemas:
     ObjectTranslate:
       type: object
       properties:
+        id:
+          type: integer
+          format: int64
+          default: 0
         lang:
           type: string
           default: ''
@@ -117,21 +133,17 @@ components:
           type: string
           default: ''
 
-    ObjectStory:
+    HadithVersion:
       type: object
       properties:
-        title:
-          type: array
-          items:
-            $ref: '#/components/schemas/ObjectTranslate'
-
-
-    ObjectVersion:
-      type: object
-      properties:
+        id:
+          type: integer
+          format: int64
+          default: 0
         original:
           type: string
           default: ''
+          minLength: 5
         isDefault:
           type: boolean
           default: false
@@ -139,28 +151,46 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ObjectTranslate'
+        broughtId:
+          type: integer
+          format: int64
+          default: 0
+      required:
+        - original
+        - isDefault
+
+    HadithComment:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          default: 0
+        translates:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObjectTranslate'
+        broughtId:
+          type: integer
+          format: int64
+          default: 0
 
     HadithObjectRequest:
       type: object
       properties:
-        story:
-          $ref: '#/components/schemas/ObjectStory'
-        brought:
-          type: array
-          items:
-            $ref: '#/components/schemas/ObjectTranslate'
         versions:
           type: array
           items:
-            $ref: '#/components/schemas/ObjectVersion'
-        comment:
+            $ref: '#/components/schemas/HadithVersion'
+        title:
           type: array
           items:
             $ref: '#/components/schemas/ObjectTranslate'
+        comment:
+          $ref: '#/components/schemas/HadithComment'
       required:
-        - story
-        - brought
         - versions
+        - title
         - comment
 
     HadithCard:
@@ -179,30 +209,53 @@ components:
       items:
         $ref: "#/components/schemas/HadithCard"
 
-    HadithResponse:
+
+    GetHadithStory:
       type: object
       properties:
         id:
           type: integer
           format: int64
-        origin:
+        title:
+          $ref: '#/components/schemas/ObjectTranslate'
+
+    GetHadithVersion:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        original:
           type: string
-          example: |
-            إدخال بعض النوادر أو الكلمات العشوائية إلى النص. إن كنت تريد أن تستخدم نص لوريم 
-             إيبسوم ما، عليك أن تتحقق أولاً أن ليس هناك أي كلمات أو عبارات محرجة أو غير لائقة مخبأة في هذا النص. بينما تعمل
-            جميع مولّدات نصوص لوريم إيبسوم على الإنترنت على إعادة تكرار مقاطع من نص لوريم إيبسوم نفسه عدة 
-             مرات بما تتطلبه الحاجة، يقوم مولّدنا هذا باستخدام كلمات من قاموس يحوي على أكثر من
-        translate:
-          type: string
-          example: |
-            here are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration 
-            in some form, by injected humour, or randomised words which don't look even slightly believable.
-        interpretation:
-          type: string
-          example: |
-            It is a long established fact that a reader will be distracted by the readable content of a page when 
-            looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of
-            letters, as opposed to using 'Content here, content here', making it look like readable English.
+        isDefault:
+          type: boolean
+        broughtId:
+          type: integer
+          format: int64
+        version:
+          $ref: '#/components/schemas/ObjectTranslate'
+
+    GetHadithComment:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        broughtId:
+          type: integer
+          format: int64
+        comment:
+          $ref: '#/components/schemas/ObjectTranslate'
+
+    HadithResponse:
+      type: object
+      properties:
+        story:
+          $ref: '#/components/schemas/GetHadithStory'
+        version:
+          $ref: '#/components/schemas/GetHadithVersion'
+        comment:
+          $ref: '#/components/schemas/GetHadithComment'
 
     Seq:
       type: object

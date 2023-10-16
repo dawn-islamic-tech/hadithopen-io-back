@@ -31,3 +31,44 @@ returning id
 		comment,
 	)
 }
+
+func (c Comment) Update(ctx context.Context, comment types.Comment) (
+	err error,
+) {
+	const query = `
+update hadith.comments
+	set comment = :comment
+where id = :id
+`
+
+	return pgscan.Exec(
+		ctx,
+		c.db,
+		query,
+		comment,
+	)
+}
+
+func (c Comment) Get(ctx context.Context, id int64) (
+	comment types.Comment,
+	err error,
+) {
+	const query = `
+select 
+    id, 
+    brought_id,
+    comment
+from hadith.comments
+where id = :id
+`
+
+	return comment, pgscan.Get(
+		ctx,
+		c.db,
+		&comment,
+		query,
+		map[string]any{
+			"id": id,
+		},
+	)
+}

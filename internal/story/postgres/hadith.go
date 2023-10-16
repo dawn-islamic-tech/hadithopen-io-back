@@ -63,11 +63,25 @@ from hadith.stories s
 func (h Hadith) Get(ctx context.Context, storyID int64) (hadith types.Hadith, _ error) {
 	const query = `
 select
-	s.id         as id,
-	t.translate  as title,
-	v.original,
-	vt.translate as version,
-	ct.translate as comment
+	s.id         as story_id,
+	t.translate  as story_title,
+	t.id 		 as story_translate_id,
+	t.lang 		 as story_lang,
+	
+	v.id 			as version_id,
+	v.is_default 	as version_is_default,
+	v.original      as version_original,
+	vt.translate 	as version,
+	vt.id 			as version_translate_id,
+	vt.lang 		as version_lang,
+	v.brought_id 	as version_brought_id,
+
+	
+	c.id 			as comment_id,
+	ct.translate 	as comment,
+	ct.id 			as comment_translate_id,
+	ct.lang 		as comment_lang,
+	c.brought_id 	as comment_brought_id
 from hadith.stories s
          inner join hadith.translates t
                     on t.id = cast ((s.title ->> :lang) as bigint)
@@ -153,5 +167,22 @@ values (:story_id, :version_id)
 		h.db,
 		query,
 		mp,
+	)
+}
+
+func (h Hadith) Update(ctx context.Context, story types.Story) (
+	err error,
+) {
+	const query = `
+update hadith.stories
+	set title = :title
+where id = :id
+`
+
+	return pgscan.Exec(
+		ctx,
+		h.db,
+		query,
+		story,
 	)
 }

@@ -31,3 +31,46 @@ returning id
 		version,
 	)
 }
+
+func (v Version) Update(ctx context.Context, version types.Version) (
+	err error,
+) {
+	const query = `
+update hadith.versions
+	set  
+	    is_default = :is_default,
+	    original = :original,
+	    version = :version
+where id = :id 
+`
+
+	return pgscan.Exec(
+		ctx,
+		v.db,
+		query,
+		version,
+	)
+}
+
+func (v Version) Get(ctx context.Context, id int64) (version types.Version, err error) {
+	const query = `
+select 
+    id,
+	brought_id, 
+	is_default, 
+	original,
+	version
+from hadith.versions
+where id = :id 
+`
+
+	return version, pgscan.Get(
+		ctx,
+		v.db,
+		&version,
+		query,
+		map[string]any{
+			"id": id,
+		},
+	)
+}

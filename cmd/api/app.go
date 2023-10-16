@@ -17,10 +17,11 @@ import (
 	"github.com/hadithopen-io/back/internal/story"
 	"github.com/hadithopen-io/back/internal/story/dhttp"
 	"github.com/hadithopen-io/back/internal/story/postgres"
-	"github.com/hadithopen-io/back/pkg/cookie/middleware"
+	"github.com/hadithopen-io/back/internal/story/translate"
 	"github.com/hadithopen-io/back/pkg/db/conn"
 	"github.com/hadithopen-io/back/pkg/empty"
 	"github.com/hadithopen-io/back/pkg/errors"
+	"github.com/hadithopen-io/back/pkg/http/middleware"
 	"github.com/hadithopen-io/back/pkg/tx"
 )
 
@@ -84,7 +85,7 @@ func run() (
 	)
 
 	slog.Info("init translate repo")
-	translate := postgres.NewTranslate(
+	translateStore := postgres.NewTranslate(
 		dbconn,
 	)
 
@@ -103,6 +104,11 @@ func run() (
 		dbconn,
 	)
 
+	slog.Info("init story object repo")
+	hadithObject := postgres.NewStoryObject(
+		dbconn,
+	)
+
 	slog.Info("init object tx")
 	objectWrapper := tx.NewWrapper(
 		postgres.NewObjectTX(
@@ -110,12 +116,17 @@ func run() (
 		),
 	)
 
+	slog.Info("init translate service")
+	translateService := translate.NewTranslate(
+		translateStore,
+	)
+
 	storyObjectService := story.NewObject(
-		translate,
+		translateService,
 		comment,
 		brought,
 		version,
-		hadithStore,
+		hadithObject,
 		objectWrapper,
 	)
 
@@ -129,15 +140,17 @@ func run() (
 		graphStore,
 	)
 
-	slog.Info("init story handler")
+	slog.Info("init story delivery")
 	storyDelivery := dhttp.NewStoryHandler(
 		storyService,
 		transmittersService,
 		storyObjectService,
 	)
 
+	slog.Info("init story delivery handler")
 	storyHandler, err := storyDelivery.Handler(
 		middleware.CookieAuth,
+		middleware.QueryLang,
 	)
 	if err != nil {
 		return errors.Wrap(err, "after init story handler")
