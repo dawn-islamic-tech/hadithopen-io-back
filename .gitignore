@@ -3,3 +3,4 @@
 /internal/story/dhttp/hadithgen/*
 /configs/main.yaml
 /data.ms
+/internal/story/mocks/*
