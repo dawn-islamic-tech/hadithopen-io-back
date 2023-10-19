@@ -1,14 +1,20 @@
-api:
-  host: "localhost:9090"
-
 db:
   conn: "postgres://hadith:hadith@hadith-db:54302/hadith?sslmode=disable"
 
 http:
   readHeaderTimeout: 10s
+  host: "localhost:9090"
 
 meiliSearch:
     apiKey: "some_key"
     host: "localhost:7070"
 
 openAI:
+
+jwt:
+  expiresTime: 1h
+  refreshTime: 24h
+  secret: jwt_secret_message
+
+auth:
+  secret: auth_secret_message

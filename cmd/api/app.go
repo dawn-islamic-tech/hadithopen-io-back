@@ -13,6 +13,10 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
+	"github.com/hadithopen-io/back/internal/auth"
+	authhttp "github.com/hadithopen-io/back/internal/auth/dhttp"
+	authpostgres "github.com/hadithopen-io/back/internal/auth/postgres"
+	"github.com/hadithopen-io/back/internal/auth/sha256"
 	"github.com/hadithopen-io/back/internal/config"
 	"github.com/hadithopen-io/back/internal/story"
 	"github.com/hadithopen-io/back/internal/story/dhttp"
@@ -22,6 +26,8 @@ import (
 	"github.com/hadithopen-io/back/pkg/empty"
 	"github.com/hadithopen-io/back/pkg/errors"
 	"github.com/hadithopen-io/back/pkg/http/middleware"
+	"github.com/hadithopen-io/back/pkg/jwt"
+	"github.com/hadithopen-io/back/pkg/jwt/hs256"
 	"github.com/hadithopen-io/back/pkg/tx"
 )
 
@@ -121,6 +127,7 @@ func run() (
 		translateStore,
 	)
 
+	slog.Info("init story object service")
 	storyObjectService := story.NewObject(
 		translateService,
 		comment,
@@ -140,24 +147,72 @@ func run() (
 		graphStore,
 	)
 
+	slog.Info("init tokenize/parser")
+	tokenizeParser := hs256.NewHS256(
+		conf.JWT.ExpiresTime,
+		conf.JWT.RefreshTime,
+		[]byte(
+			// The mutable nature of secret may affect attempts to decode and encode data in the past.
+			// You need to keep in mind that by changing the secret, previous users will not be able to log in.
+			// Need migration when changing.
+			conf.JWT.Secret,
+		),
+	)
+
+	slog.Info("init authentication wrapper")
+	authWrapper := jwt.NewWrapper(
+		tokenizeParser,
+	)
+
 	slog.Info("init story delivery")
 	storyDelivery := dhttp.NewStoryHandler(
 		storyService,
 		transmittersService,
 		storyObjectService,
+		authWrapper,
 	)
 
 	slog.Info("init story delivery handler")
 	storyHandler, err := storyDelivery.Handler(
-		middleware.CookieAuth,
-		middleware.QueryLang,
+		middleware.UserLang,
 	)
 	if err != nil {
-		return errors.Wrap(err, "after init story handler")
+		return errors.Wrap(err, "after init story delivery handler")
+	}
+
+	slog.Info("init auth postgres repo")
+	authUser := authpostgres.NewUser(
+		dbconn,
+	)
+
+	slog.Info("init pwd encoder")
+	pwdEncoder := sha256.NewEncoder(
+		conf.Auth.Secret,
+	)
+
+	slog.Info("init auth service")
+	authService := auth.NewAuth(
+		authUser,
+		tokenizeParser,
+		pwdEncoder,
+	)
+
+	slog.Info("init auth delivery")
+	authDelivery := authhttp.NewAuthHandler(
+		authService,
+		authWrapper,
+	)
+
+	slog.Info("init auth delivery handler")
+	authHandler, err := authDelivery.Handler(
+		middleware.UserLang,
+	)
+	if err != nil {
+		return errors.Wrap(err, "after init auth delivery handler")
 	}
 
 	server := &http.Server{
-		Addr:              conf.API.Host,
+		Addr:              conf.HTTP.Host,
 		ReadHeaderTimeout: conf.HTTP.ReadHeaderTimeout,
 	}
 
@@ -166,12 +221,17 @@ func run() (
 		storyHandler,
 	)
 
+	http.Handle(
+		authDelivery.Path()+"/",
+		authHandler,
+	)
+
 	eg, ctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
 		defer slog.Info("stop listen http server")
 
-		slog.Info("init http server", "host", conf.API.Host)
+		slog.Info("init http server", "host", conf.HTTP.Host)
 		serr := server.ListenAndServe()
 		if errors.Is(serr, http.ErrServerClosed) {
 			return nil

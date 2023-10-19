@@ -10,6 +10,7 @@ import (
 	"github.com/hadithopen-io/back/internal/story/dhttp/hadithgen"
 	"github.com/hadithopen-io/back/internal/story/types"
 	"github.com/hadithopen-io/back/pkg/errors"
+	"github.com/hadithopen-io/back/pkg/jwt"
 )
 
 type Hadith interface {
@@ -49,15 +50,22 @@ type StoryHandler struct {
 	hadith       Hadith
 	transmitters Transmitters
 	object       HadithObject
+	authWrapper  jwt.Wrapper
 
 	hadithgen.UnimplementedHandler
 }
 
-func NewStoryHandler(hadith Hadith, transmitters Transmitters, object HadithObject) *StoryHandler {
+func NewStoryHandler(
+	hadith Hadith,
+	transmitters Transmitters,
+	object HadithObject,
+	authWrapper jwt.Wrapper,
+) *StoryHandler {
 	return &StoryHandler{
 		hadith:       hadith,
 		transmitters: transmitters,
 		object:       object,
+		authWrapper:  authWrapper,
 	}
 }
 
@@ -65,14 +73,22 @@ const path = "/api/hadith"
 
 func (s *StoryHandler) Path() string { return path }
 
+func (s *StoryHandler) HandleCookieAuth(ctx context.Context, _ string, token hadithgen.CookieAuth) (
+	context.Context,
+	error,
+) {
+	return s.authWrapper.WrapUser(ctx, token.APIKey)
+}
+
 func (s *StoryHandler) Handler(m ...middleware.Middleware) (http.Handler, error) {
 	handler, err := hadithgen.NewServer(
-		s,
+		s, // server implementation
+		s, // secure middleware implementation
 		hadithgen.WithMiddleware(
-			m...,
+			m..., // global middlewares
 		),
 		hadithgen.WithPathPrefix(
-			path,
+			path, // basic prefix
 		),
 	)
 

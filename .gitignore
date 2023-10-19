@@ -1,6 +1,7 @@
 /.idea
 
 /internal/story/dhttp/hadithgen/*
+/internal/auth/dhttp/authgen/*
 /configs/main.yaml
 /data.ms
 /internal/story/mocks/*

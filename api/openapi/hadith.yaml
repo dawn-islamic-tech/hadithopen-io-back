@@ -17,6 +17,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/HadithCardsResponse'
     post:
+      security:
+        - cookieAuth: [ ]
       requestBody:
         required: true
         content:
@@ -48,6 +50,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/HadithResponse'
     put:
+      security:
+        - cookieAuth: [ ]
       requestBody:
         required: true
         content:
@@ -303,3 +307,9 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/HadithTag"
+
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: jwt

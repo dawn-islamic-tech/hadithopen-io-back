@@ -1,0 +1,60 @@
+openapi: 3.0.3
+info:
+  title: Auth engine API
+  version: 1.0.0
+servers:
+  - url: /api/auth
+paths:
+  /v1/login:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+      summary: Login user
+      operationId: Login
+      responses:
+        '200':
+          description: Set cookie if OK login
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: JSESSIONID=abcde12345; Path=/; HttpOnly
+  /v1/logout:
+    post:
+      security:
+        - cookieAuth: [ ]
+      summary: Logout user
+      operationId: Logout
+      responses:
+        '200':
+          description: Drop from cookie ok
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: jwt=fffhreo23kejaxpfperoicnrkls; Path=/; HttpOnly
+
+components:
+  schemas:
+    UserLoginRequest:
+      type: object
+      properties:
+        login:
+          type: string
+          minLength: 5
+        pwd:
+          type: string
+          minLength: 5
+      required:
+        - login
+        - pwd
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: jwt
+
