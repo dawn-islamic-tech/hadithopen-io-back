@@ -11,15 +11,12 @@ import (
 )
 
 type Config struct {
-	API         API         `yaml:"api"`
 	DB          DB          `yaml:"db"`
 	HTTP        HTTP        `yaml:"http"`
 	MeiliSearch MeiliSearch `yaml:"meiliSearch"`
 	OpenAI      OpenAI      `yaml:"openAI"`
-}
-
-type API struct {
-	Host string `yaml:"host"`
+	Auth        Auth        `yaml:"auth"`
+	JWT         JWT         `yaml:"jwt"`
 }
 
 type DB struct {
@@ -27,12 +24,23 @@ type DB struct {
 }
 
 type HTTP struct {
+	Host              string        `yaml:"host"`
 	ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout"`
 }
 
 type MeiliSearch struct {
 	APIKey string `yaml:"masterKey"`
 	Host   string `yaml:"host"`
+}
+
+type Auth struct {
+	Secret string `yaml:"secret"`
+}
+
+type JWT struct {
+	ExpiresTime time.Duration `yaml:"expiresTime"`
+	RefreshTime time.Duration `yaml:"refreshTime"`
+	Secret      string        `yaml:"secret"`
 }
 
 type OpenAIKey string
